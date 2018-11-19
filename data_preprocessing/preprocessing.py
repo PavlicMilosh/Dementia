@@ -6,8 +6,9 @@ if __name__ == '__main__':
     adrc = pd.read_csv("../numerical_data/raw/ADRC Clinical Data.csv")
     adrc.replace(to_replace='.', value=np.nan, inplace=True)
 
-    adrc.drop(labels=["Date", "Age", "acsparnt", "height", "weight", "primStudy", "acsStudy"],
-              axis="columns", inplace=True)
+    adrc.drop(
+        labels=["Date", "Age", "acsparnt", "height", "weight", "primStudy", "acsStudy"],
+        axis="columns", inplace=True)
 
     clinician_diagnosis = pd.read_csv("../numerical_data/raw/Clinician Diagnosis.csv")
 
@@ -81,6 +82,17 @@ if __name__ == '__main__':
         labels=["YOB"],
         axis="columns", inplace=True)
 
-    # TODO UPDRS has 50% missing values in every column (with 100% missing in every other column), see if its worth using at all
+    # TODO: UPDRS has 50% missing values in every column (with 100% missing in every other column)
+    # TODO: see if its worth using at all
 
-    print()
+    # number of rows in each csv
+    # print(adrc.shape[0])                        # 6224 0
+    # print(clinician_diagnosis.shape[0])         # 4089
+    # print(faqs.shape[0])                        # 4089
+    # print(freesurfers.shape[0])                 # 1984 -2
+    # print(gds.shape[0])                         # 4089
+    # print(his_and_cvd.shape[0])                 # 4089
+    # print(npi_q.shape[0])                       # 4089
+    # print(physical_neuro_findings.shape[0])     # 4089
+    # print(sub_health_history.shape[0])          # 4089
+    # print(subjects.shape[0])                    # 1098 -1
