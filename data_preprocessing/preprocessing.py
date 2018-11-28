@@ -2,10 +2,18 @@ import pandas as pd
 import numpy as np
 
 
+
 if __name__ == '__main__':
     adrc = pd.read_csv("../numerical_data/raw/ADRC Clinical Data.csv")
+
+    '''
+        Replacing '.' (missing) values with numpy nan
+    '''
     adrc.replace(to_replace='.', value=np.nan, inplace=True)
 
+    '''
+        Dropping irrelevant labels from tables 
+    '''
     adrc.drop(
         labels=["Date", "Age", "acsparnt", "height", "weight", "primStudy", "acsStudy"],
         axis="columns", inplace=True)
@@ -82,8 +90,51 @@ if __name__ == '__main__':
         labels=["YOB"],
         axis="columns", inplace=True)
 
-    # TODO: UPDRS has 50% missing values in every column (with 100% missing in every other column)
-    # TODO: see if its worth using at all
+    '''
+        Creating a list of ids for each table
+    '''
+    adrc_ids = adrc["ADRC_ADRCCLINICALDATA ID"].tolist()
+    clinician_diagnosis_ids = clinician_diagnosis["UDS_D1DXDATA ID"].tolist()
+    faqs_ids = faqs["UDS_B7FAQDATA ID"].tolist()
+    gds_ids = gds["UDS_B6BEVGDSDATA ID"].tolist()
+    his_and_cvd_ids = his_and_cvd["UDS_B2HACHDATA ID"].tolist()
+    npi_q_ids = npi_q["UDS_B5BEHAVASDATA ID"].tolist()
+    physical_neuro_findings_ids = physical_neuro_findings["UDS_B8EVALDATA ID"].tolist()
+    sub_health_history_ids = sub_health_history["UDS_A5SUBHSTDATA ID"].tolist()
+
+    all_ids = [clinician_diagnosis_ids, faqs_ids, gds_ids, his_and_cvd_ids, npi_q_ids, physical_neuro_findings_ids, sub_health_history_ids]
+    new_ids = []
+    for id_column in all_ids:
+        new = list(map(lambda x: x.split("_")[0] + "_" + x.split("_")[2], id_column))
+        new_ids += [new]
+
+    adrc_ids = list(map(lambda x: x.split("_")[0] + "_" + x.split("_")[2], adrc_ids))
+
+    '''
+        Removing all instances from 4089 tables that don't contain labels in adrc table 
+    '''
+
+    # map where key is a column name which contains ids, and value is dataframe
+    map = {
+        "UDS_D1DXDATA ID": clinician_diagnosis,
+        "UDS_B7FAQDATA ID": faqs,
+        "UDS_B6BEVGDSDATA ID": gds,
+        "UDS_B2HACHDATA ID": his_and_cvd,
+        "UDS_B5BEHAVASDATA ID": npi_q,
+        "UDS_B8EVALDATA ID": physical_neuro_findings,
+        "UDS_A5SUBHSTDATA ID": sub_health_history
+    }
+
+    seti = set()
+    for i in range(len(new_ids[1])):
+        if new_ids[1][i] not in adrc_ids:
+            seti.add(new_ids[1][i])
+
+    for k, v in map.items():
+        criterion = v[k].map(lambda i: i.split("_")[0] + "_" + i.split("_")[2] not in seti)
+        map[k] = v[criterion]
+
+    adrc = adrc[adrc["dx1"].notnull()]
 
     # number of rows in each csv
     # print(adrc.shape[0])                        # 6224 0
@@ -96,3 +147,23 @@ if __name__ == '__main__':
     # print(physical_neuro_findings.shape[0])     # 4089
     # print(sub_health_history.shape[0])          # 4089
     # print(subjects.shape[0])                    # 1098 -1
+    # all tables with 4089 have all the same instances (ids are all the same)
+
+    # for i in new_ids:
+    #     i.sort()
+
+    # count = 0
+    # for i in range(len(new_ids[0])):
+    #     if new_ids[0][i] == new_ids[1][i] and new_ids[0][i] == new_ids[2][i] and new_ids[0][i] == new_ids[3][i] \
+    #         and new_ids[0][i] == new_ids[4][i] and new_ids[0][i] == new_ids[5][i] and new_ids[0][i] == new_ids[6][i]:
+    #         count += 1
+    #         continue
+    #     print(new_ids[0][i])
+    #     print(new_ids[1][i])
+    #     print(new_ids[2][i])
+    #     print(new_ids[3][i])
+    #     print(new_ids[4][i])
+    #     print(new_ids[5][i])
+    #     print(new_ids[6][i])
+    #
+    # print(count)
