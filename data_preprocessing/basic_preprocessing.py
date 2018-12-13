@@ -70,8 +70,6 @@ def load_data():
                 "COGOTH2F", "COGOTH3X", "COGOTH3F"],
         axis="columns", inplace=True)
 
-    clinician_diagnosis["dx1"] = adrc["dx1"]
-
     clinician_diagnosis["UDS_D1DXDATA ID"] = clinician_diagnosis["UDS_D1DXDATA ID"]\
         .map(lambda x: x.split("_")[0] + "_" + x.split("_")[2])
 
@@ -86,8 +84,6 @@ def load_data():
     faqs.drop(
         labels=["Date", "Age"],
         axis="columns", inplace=True)
-
-    faqs["dx1"] = adrc["dx1"]
 
     faqs["UDS_B7FAQDATA ID"] = faqs["UDS_B7FAQDATA ID"] \
         .map(lambda x: x.split("_")[0] + "_" + x.split("_")[2])
@@ -187,8 +183,6 @@ def load_data():
         "UDS_A5SUBHSTDATA ID": sub_health_history
     }
 
-    # TODO: id_dataframe_map has rows removed, but data (in the end) doesnt
-
     seti = set()
     for i in range(len(all_ids[1])):
         if all_ids[1][i] not in adrc_ids:
@@ -201,36 +195,8 @@ def load_data():
     adrc = adrc[adrc["dx1"].notnull()]
 
     # number of rows in each csv
-    # print(adrc.shape[0])                        # 6224 0
-    # print(clinician_diagnosis.shape[0])         # 4089
-    # print(faqs.shape[0])                        # 4089
-    # print(freesurfers.shape[0])                 # 1984 -2
-    # print(gds.shape[0])                         # 4089
-    # print(his_and_cvd.shape[0])                 # 4089
-    # print(npi_q.shape[0])                       # 4089
-    # print(physical_neuro_findings.shape[0])     # 4089
-    # print(sub_health_history.shape[0])          # 4089
-    # print(subjects.shape[0])                    # 1098 -1
+    # adrc 6224 others 4089 freesurfers 1984 subjects 1098
     # all tables with 4089 have all the same instances (ids are all the same)
-
-    # for i in new_ids:
-    #     i.sort()
-
-    # count = 0
-    # for i in range(len(new_ids[0])):
-    #     if new_ids[0][i] == new_ids[1][i] and new_ids[0][i] == new_ids[2][i] and new_ids[0][i] == new_ids[3][i] \
-    #         and new_ids[0][i] == new_ids[4][i] and new_ids[0][i] == new_ids[5][i] and new_ids[0][i] == new_ids[6][i]:
-    #         count += 1
-    #         continue
-    #     print(new_ids[0][i])
-    #     print(new_ids[1][i])
-    #     print(new_ids[2][i])
-    #     print(new_ids[3][i])
-    #     print(new_ids[4][i])
-    #     print(new_ids[5][i])
-    #     print(new_ids[6][i])
-    #
-    # print(count)
 
     data = {"adrc": adrc,
             "clinician_diagnosis": id_dataframe_map["UDS_D1DXDATA ID"],
@@ -244,9 +210,25 @@ def load_data():
             "subjects": subjects}
 
     # TODO: find out how to get join columns from all the dataframes
-    complete = pd.concat([data["clinician_diagnosis"], data["faqs"], data["gds"], data["his_and_cvd"], data["npi_q"],
-                          data["physical_neuro_findings"], data["sub_health_history"]], axis=1, join_axes=[])
 
+    data["adrc"].rename(columns={"ADRC_ADRCCLINICALDATA ID": "ID"}, inplace=True)
+    data["clinician_diagnosis"].rename(columns={"UDS_D1DXDATA ID": "ID"}, inplace=True)
+    data["faqs"].rename(columns={"UDS_B7FAQDATA ID": "ID"}, inplace=True)
+    data["gds"].rename(columns={"UDS_B6BEVGDSDATA ID": "ID"}, inplace=True)
+    data["his_and_cvd"].rename(columns={"UDS_B2HACHDATA ID": "ID"}, inplace=True)
+    data["npi_q"].rename(columns={"UDS_B5BEHAVASDATA ID": "ID"}, inplace=True)
+    data["physical_neuro_findings"].rename(columns={"UDS_B8EVALDATA ID": "ID"}, inplace=True)
+    data["sub_health_history"].rename(columns={"UDS_A5SUBHSTDATA ID": "ID"}, inplace=True)
+    data["freesurfers"].rename(columns={"FS_FSDATA ID": "ID"}, inplace=True)
+    print()
+
+    data["faqs"].drop(
+        labels=["Subject"],
+        axis="columns", inplace=True)
+    joined = data["clinician_diagnosis"].set_index("ID")\
+        .join(data["faqs"].set_index("ID"), how='inner', lsuffix="_left", rsuffix="_right", sort=True)
+    # joined dataframe doesnt have id column, so others cant be joined with it
+    joined = joined.set_index("ID").join(data["gds"].set_index("ID"), lsuffix="")
 
     return data
 
