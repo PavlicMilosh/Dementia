@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from pandas import DataFrame
+from typing import Set, Any
 
 
 def adjust_target_variable_labels(df: DataFrame):
@@ -38,6 +39,12 @@ def adjust_target_variable_labels(df: DataFrame):
     df.replace({"dx1": label_map}, inplace=True)
 
 
+def remove_others(df: DataFrame, columns: Set[Any]):
+    cols_total: Set[Any] = set(df.columns)
+    diff: Set[Any] = cols_total - columns
+    return df.drop(diff, axis=1)
+
+
 def load_data():
     adrc = pd.read_csv("../numerical_data/raw/ADRC Clinical Data.csv")
 
@@ -52,6 +59,7 @@ def load_data():
     adrc.drop(
         labels=["Date", "Age", "acsparnt", "height", "weight", "primStudy", "acsStudy"],
         axis="columns", inplace=True)
+
 
     adrc["ADRC_ADRCCLINICALDATA ID"] = adrc["ADRC_ADRCCLINICALDATA ID"] \
         .map(lambda x: x.split("_")[0] + "_" + x.split("_")[2])
@@ -209,8 +217,6 @@ def load_data():
             "sub_health_history": id_dataframe_map["UDS_A5SUBHSTDATA ID"],
             "subjects": subjects}
 
-    # TODO: find out how to get join columns from all the dataframes
-
     data["adrc"].rename(columns={"ADRC_ADRCCLINICALDATA ID": "ID"}, inplace=True)
     data["clinician_diagnosis"].rename(columns={"UDS_D1DXDATA ID": "ID"}, inplace=True)
     data["faqs"].rename(columns={"UDS_B7FAQDATA ID": "ID"}, inplace=True)
@@ -220,15 +226,26 @@ def load_data():
     data["physical_neuro_findings"].rename(columns={"UDS_B8EVALDATA ID": "ID"}, inplace=True)
     data["sub_health_history"].rename(columns={"UDS_A5SUBHSTDATA ID": "ID"}, inplace=True)
     data["freesurfers"].rename(columns={"FS_FSDATA ID": "ID"}, inplace=True)
-    print()
 
-    data["faqs"].drop(
-        labels=["Subject"],
-        axis="columns", inplace=True)
-    joined = data["clinician_diagnosis"].set_index("ID")\
-        .join(data["faqs"].set_index("ID"), how='inner', lsuffix="_left", rsuffix="_right", sort=True)
-    # joined dataframe doesnt have id column, so others cant be joined with it
-    joined = joined.set_index("ID").join(data["gds"].set_index("ID"), lsuffix="")
+    '''
+        Removing subject column from every dataframe but one, so it doesnt repeat in merged dataframe
+    '''
+
+    for key in ["faqs", "gds", "his_and_cvd", "npi_q", "physical_neuro_findings", "sub_health_history"]:
+        data[key].drop(
+                       labels=["Subject"],
+                       axis="columns", inplace=True)
+
+    id_dx1 = remove_others(data["adrc"], {"ID", "dx1"})
+
+    merged = pd.merge(data["clinician_diagnosis"], data["faqs"], on="ID", how="inner")
+    merged = pd.merge(merged, data["gds"], on="ID", how="inner")
+    merged = pd.merge(merged, data["his_and_cvd"], on="ID", how="inner")
+    merged = pd.merge(merged, data["npi_q"], on="ID", how="inner")
+    merged = pd.merge(merged, data["physical_neuro_findings"], on="ID", how="inner")
+    merged = pd.merge(merged, data["sub_health_history"], on="ID", how="inner")
+    merged = pd.merge(merged, id_dx1, on="ID", how="left")
+    data["merged"] = merged
 
     return data
 

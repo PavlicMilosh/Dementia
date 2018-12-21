@@ -1,3 +1,5 @@
+from sklearn.model_selection import train_test_split
+
 from data_preprocessing.basic_preprocessing import load_data
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
@@ -27,6 +29,8 @@ if __name__ == '__main__':
     # Get X and y parts of the dataset
     y = adrc["dx1"]
     X = adrc.drop(labels="dx1", axis="columns")
+
+    X_train, y_train, X_test, y_test = train_test_split(X, y, test_size=0.2)
 
     # Encode dx1 (target variable)
     encoder = LabelEncoder()
