@@ -9,8 +9,8 @@ from data_preprocessing.basic_preprocessing import load_data
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 import numpy as np
-# import matplotlib.pyplot as plt
-# from scipy.stats import randint as sp_randint
+import matplotlib.pyplot as plt
+from scipy.stats import randint as sp_randint
 import xgboost as xgb
 
 
@@ -97,12 +97,19 @@ def print_search_results(title, model):
 
 def bagging_cv(X_train, y_train, seed):
 
-    clf = BaggingClassifier(n_estimators=140, random_state=seed)
+    # Results:
+    #                       DEFAULT      Z-SCORE      OUTLIERS
+    # n_estimators          250
+    # warm_start            True
+    # max_samples           0.6
+    # --------------------------------------------------------
+    # f1-micro
 
+    clf = BaggingClassifier(n_estimators=140, random_state=seed)
     params = {
-        'n_estimators': list(range(100, 1500, 50)),    # 250
-        'warm_start': [True, False],                   # True
-        'max_samples': [0.6, 0.8, 1.0]                 # 0.6
+        'n_estimators': list(range(100, 1500, 50)),
+        'warm_start': [True, False],
+        'max_samples': [0.6, 0.8, 1.0]
     }
 
     gCV = GridSearchCV(estimator=clf,
@@ -119,13 +126,22 @@ def bagging_cv(X_train, y_train, seed):
 
 def random_forest_cv(X_train, y_train, seed):
 
+    # Results:
+    #                       DEFAULT      Z-SCORE      OUTLIERS
+    # n_estimators          300
+    # criterion             gini
+    # min_samples_split     4
+    # max_depth             18
+    # --------------------------------------------------------
+    # f1-micro              0.9285
+
     clf = RandomForestClassifier(n_estimators=140, random_state=seed)
 
-    params = {                                          # 0.9284559417946645
-        'n_estimators': list(range(100, 1500, 50)),     # 300
-        'criterion': ['gini', 'entropy'],               # gini
-        'min_samples_split': list(range(2, 20, 2)),     # 4
-        'max_depth': list(range(2, 20, 2))              # 18
+    params = {
+        'n_estimators': list(range(100, 1500, 50)),
+        'criterion': ['gini', 'entropy'],
+        'min_samples_split': list(range(2, 20, 2)),
+        'max_depth': list(range(2, 20, 2))
     }
 
     gCV = GridSearchCV(estimator=clf,
@@ -141,6 +157,14 @@ def random_forest_cv(X_train, y_train, seed):
 
 
 def extra_trees_cv(X_train, y_train, seed):
+
+    # Results:
+    #                       DEFAULT      Z-SCORE      OUTLIERS
+    # n_estimators
+    # min_samples_split
+    # max_depth
+    # --------------------------------------------------------
+    # f1-micro
 
     clf = ExtraTreesClassifier(n_estimators=140, random_state=seed)
 
@@ -165,20 +189,28 @@ def extra_trees_cv(X_train, y_train, seed):
 
 def gradient_boosting_cv(X_train, y_train, seed):
 
+    # Results:
+    #                       DEFAULT      Z-SCORE      OUTLIERS
+    # n_estimators          140
+    # min_samples_split     2
+    # max_depth             2
+    # --------------------------------------------------------
+    # f1-micro
+
     clf = GradientBoostingClassifier(n_estimators=140,
                                      min_samples_split=2,
                                      max_depth=2,
                                      random_state=seed)
 
     params = {
-        'n_estimators': list(range(100, 1000, 50)),     # 140
-        'min_samples_split': list(range(2, 20, 2)),     # 2
-        'max_depth': list(range(2, 20, 2))              # 2
+        'n_estimators': list(range(100, 1000, 50)),
+        'min_samples_split': list(range(2, 20, 2)),
+        'max_depth': list(range(2, 20, 2))
     }
 
     gCV = GridSearchCV(estimator=clf,
                        param_grid=params,
-                       scoring='f1-micro',
+                       scoring='f1_micro',
                        n_jobs=-1,
                        refit=True,
                        cv=3,
@@ -190,17 +222,27 @@ def gradient_boosting_cv(X_train, y_train, seed):
 
 def xgboost_cv(X_train, y_train, seed):
 
+    # Results:
+    #                       DEFAULT      Z-SCORE      OUTLIERS
+    # learning_rate         0.1
+    # max_depth             16
+    # min_child_weight      1
+    # subsample             0.8
+    # n_estimators          100
+    # --------------------------------------------------------
+    # f1-micro
+
     # merged = encode(merged, 'dx1')
     # train, test = train_test_split(merged, test_size=0.2)
 
     clf = xgb.XGBClassifier(objective='multi:softmax', num_class=4)
 
     params = {'nthread': [4],
-              'learning_rate': [0.1],  # 0.1
-              'max_depth': list(range(2, 22, 2)),  # 16
-              'min_child_weight': list(range(1, 6)),  # 1
-              'subsample': [0.8, 1],  # 0.8
-              'n_estimators': list(range(100, 1000, 50)),  # 100
+              'learning_rate': [0.1],
+              'max_depth': list(range(2, 22, 2)),
+              'min_child_weight': list(range(1, 6)),
+              'subsample': [0.8, 1],
+              'n_estimators': list(range(100, 1000, 50)),
               'seed': [seed]}
 
     gCV = GridSearchCV(estimator=clf,
@@ -221,27 +263,25 @@ def main():
     merged = load_data()["merged"]
     merged.dropna(axis="rows", subset=["dx1"], inplace=True)
     merged.drop(labels=["ID", "Subject"], axis="columns", inplace=True)
-
     merged = preprocess_merged_remove_rows(merged)
 
-    X, y = split_and_encode(merged, "dx1")
-
     # Train test split
+    X, y = split_and_encode(merged, "dx1")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
     # Perform z-score normalization
-    scaler = StandardScaler().fit_transform(X_train)
+    # scaler = StandardScaler()
+    # X_train = scaler.fit_transform(X_train)
 
     merged = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
-
     X, y = split_and_encode(merged, "dx1")
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
     # Try out different models and see their performance
 
     # Bagging
-    # bcv = bagging_cv(X_train, y_train, seed)
-    # print_search_results("Bagging", bcv)
+    bcv = bagging_cv(X_train, y_train, seed)
+    print_search_results("Bagging", bcv)
 
     # RandomForest
     # rfcv = random_forest_cv(X_train, y_train, seed)
@@ -260,9 +300,6 @@ def main():
     # print_search_results("XGBoost", xgbcv)
 
 
-
 if __name__ == '__main__':
     main()
-
-
 
