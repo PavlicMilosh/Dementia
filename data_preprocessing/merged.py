@@ -120,7 +120,7 @@ def isolation_forest_outlier_removal(X, y, seed,
     return X_train_new, y_train_new
 
 
-def bagging_cv(X_train, y_train, seed):
+def bagging_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
@@ -144,13 +144,13 @@ def bagging_cv(X_train, y_train, seed):
                        n_jobs=-1,
                        refit=True,
                        cv=3,
-                       verbose=3,
+                       verbose=verbose,
                        return_train_score='warn')
 
     return gCV.fit(X_train.values, y_train)
 
 
-def random_forest_cv(X_train, y_train, seed):
+def random_forest_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
@@ -176,13 +176,13 @@ def random_forest_cv(X_train, y_train, seed):
                        n_jobs=-1,
                        refit=True,
                        cv=3,
-                       verbose=3,
+                       verbose=verbose,
                        return_train_score='warn')
 
     return gCV.fit(X_train.values, y_train)
 
 
-def extra_trees_cv(X_train, y_train, seed):
+def extra_trees_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
@@ -207,13 +207,13 @@ def extra_trees_cv(X_train, y_train, seed):
                        n_jobs=-1,
                        refit=True,
                        cv=3,
-                       verbose=3,
+                       verbose=verbose,
                        return_train_score='warn')
 
     return gCV.fit(X_train.values, y_train)
 
 
-def gradient_boosting_cv(X_train, y_train, seed):
+def gradient_boosting_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
@@ -240,13 +240,13 @@ def gradient_boosting_cv(X_train, y_train, seed):
                        n_jobs=-1,
                        refit=True,
                        cv=3,
-                       verbose=3,
+                       verbose=verbose,
                        return_train_score='warn')
 
     return gCV.fit(X_train.values, y_train)
 
 
-def xgboost_cv(X_train, y_train, seed):
+def xgboost_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
@@ -277,14 +277,14 @@ def xgboost_cv(X_train, y_train, seed):
                        n_jobs=-1,
                        refit=True,
                        cv=3,
-                       verbose=2,
+                       verbose=verbose,
                        return_train_score='warn')
 
     return gCV.fit(X_train, y_train)
 
 
 def main():
-    
+
     seed = 14
     random.seed()
 
@@ -298,37 +298,37 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
     # Perform z-score normalization
-    # scaler = StandardScaler()
-    # X_train = scaler.fit_transform(X_train)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
 
     merged = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
     X, y = split_and_encode(merged, "dx1")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
     # Removing outliers using the Isolation Forest classifier
-    # X_train, y_train = isolation_forest_outlier_removal(X_train, y_train, seed)
+    X_train, y_train = isolation_forest_outlier_removal(X_train, y_train, seed)
 
     # Try out different models and see their performance
 
     # Bagging
-    # bcv = bagging_cv(X_train, y_train, seed)
-    # print_search_results("Bagging", bcv)
+    bcv = bagging_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Bagging", bcv)
 
     # RandomForest
-    # rfcv = random_forest_cv(X_train, y_train, seed)
-    # print_search_results("Random Forest", rfcv)
+    rfcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Random Forest", rfcv)
 
     # ExtraTrees
-    # etcv = random_forest_cv(X_train, y_train, seed)
-    # print_search_results("Extra Trees", etcv)
+    etcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Extra Trees", etcv)
 
     # GradientBoosting
-    gbcv = gradient_boosting_cv(X_train, y_train, seed)
+    gbcv = gradient_boosting_cv(X_train, y_train, seed, verbose=0)
     print_search_results("Gradient Boosting", gbcv)
 
     # XGBoost
-    # xgbcv = xgboost_cv(X_train, y_train, seed)
-    # print_search_results("XGBoost", xgbcv)
+    xgbcv = xgboost_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("XGBoost", xgbcv)
 
 
 if __name__ == '__main__':
