@@ -1,6 +1,6 @@
 import itertools
 
-from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
+from sklearn.ensemble import IsolationForest, RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.ensemble.bagging import BaggingClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 
@@ -12,8 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import randint as sp_randint
 import xgboost as xgb
-
-
+import random
 
 def preprocess_merged_remove_rows(df):
     return df.dropna()
@@ -95,6 +94,32 @@ def print_search_results(title, model):
     print("=" * 150)
 
 
+def isolation_forest_outlier_removal(X, y, seed,
+                                     n_estimators=150, max_samples=0.8, max_features=0.8,
+                                     contamination="auto"):
+
+    clf = IsolationForest(n_estimators=n_estimators,
+                          max_samples=max_samples,
+                          contamination=contamination,
+                          max_features=max_features,
+                          behaviour="new",
+                          random_state=seed,
+                          n_jobs=-1)
+
+    results = clf.fit_predict(X.values)
+
+    outliers = 0
+    for r in results:
+        if r == -1:
+            outliers += 1
+
+    removing_indices = [i for i in range(0, len(results)) if results[i] == -1]
+    X_train_new = X.drop(X.index[removing_indices])
+    y_train_new = [y[yi] for yi in range(0, len(y)) if results[yi] == 1]
+
+    return X_train_new, y_train_new
+
+
 def bagging_cv(X_train, y_train, seed):
 
     # Results:
@@ -103,9 +128,10 @@ def bagging_cv(X_train, y_train, seed):
     # warm_start            True
     # max_samples           0.6
     # --------------------------------------------------------
-    # f1-micro
+    # f1-micro              0.9220
 
     clf = BaggingClassifier(n_estimators=140, random_state=seed)
+
     params = {
         'n_estimators': list(range(100, 1500, 50)),
         'warm_start': [True, False],
@@ -121,7 +147,7 @@ def bagging_cv(X_train, y_train, seed):
                        verbose=3,
                        return_train_score='warn')
 
-    return gCV.fit(X_train, y_train, seed)
+    return gCV.fit(X_train.values, y_train)
 
 
 def random_forest_cv(X_train, y_train, seed):
@@ -153,7 +179,7 @@ def random_forest_cv(X_train, y_train, seed):
                        verbose=3,
                        return_train_score='warn')
 
-    return gCV.fit(X_train, y_train)
+    return gCV.fit(X_train.values, y_train)
 
 
 def extra_trees_cv(X_train, y_train, seed):
@@ -184,7 +210,7 @@ def extra_trees_cv(X_train, y_train, seed):
                        verbose=3,
                        return_train_score='warn')
 
-    return gCV.fit(X_train, y_train)
+    return gCV.fit(X_train.values, y_train)
 
 
 def gradient_boosting_cv(X_train, y_train, seed):
@@ -195,7 +221,7 @@ def gradient_boosting_cv(X_train, y_train, seed):
     # min_samples_split     2
     # max_depth             2
     # --------------------------------------------------------
-    # f1-micro
+    # f1-micro              0.9204
 
     clf = GradientBoostingClassifier(n_estimators=140,
                                      min_samples_split=2,
@@ -217,7 +243,7 @@ def gradient_boosting_cv(X_train, y_train, seed):
                        verbose=3,
                        return_train_score='warn')
 
-    return gCV.fit(X_train, y_train)
+    return gCV.fit(X_train.values, y_train)
 
 
 def xgboost_cv(X_train, y_train, seed):
@@ -258,7 +284,9 @@ def xgboost_cv(X_train, y_train, seed):
 
 
 def main():
+    
     seed = 14
+    random.seed()
 
     merged = load_data()["merged"]
     merged.dropna(axis="rows", subset=["dx1"], inplace=True)
@@ -277,11 +305,14 @@ def main():
     X, y = split_and_encode(merged, "dx1")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
+    # Removing outliers using the Isolation Forest classifier
+    # X_train, y_train = isolation_forest_outlier_removal(X_train, y_train, seed)
+
     # Try out different models and see their performance
 
     # Bagging
-    bcv = bagging_cv(X_train, y_train, seed)
-    print_search_results("Bagging", bcv)
+    # bcv = bagging_cv(X_train, y_train, seed)
+    # print_search_results("Bagging", bcv)
 
     # RandomForest
     # rfcv = random_forest_cv(X_train, y_train, seed)
@@ -292,8 +323,8 @@ def main():
     # print_search_results("Extra Trees", etcv)
 
     # GradientBoosting
-    # gbcv = gradient_boosting_cv(X_train, y_train, seed)
-    # print_search_results("Gradient Boosting", gbcv)
+    gbcv = gradient_boosting_cv(X_train, y_train, seed)
+    print_search_results("Gradient Boosting", gbcv)
 
     # XGBoost
     # xgbcv = xgboost_cv(X_train, y_train, seed)
@@ -301,5 +332,6 @@ def main():
 
 
 if __name__ == '__main__':
+
     main()
 
