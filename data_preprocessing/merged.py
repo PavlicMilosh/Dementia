@@ -217,11 +217,11 @@ def gradient_boosting_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
-    # n_estimators          140
-    # min_samples_split     2
-    # max_depth             2
+    # n_estimators          140                       100
+    # min_samples_split     2                         14
+    # max_depth             2                         18
     # --------------------------------------------------------
-    # f1-micro              0.9204
+    # f1-micro              0.9204                    0.9439
 
     clf = GradientBoostingClassifier(n_estimators=140,
                                      min_samples_split=2,
@@ -250,13 +250,13 @@ def xgboost_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
-    # learning_rate         0.1
-    # max_depth             16
-    # min_child_weight      1
-    # subsample             0.8
-    # n_estimators          100
+    # learning_rate         0.1                       .1
+    # max_depth             16                        10
+    # min_child_weight      1                         5
+    # subsample             0.8                       .8
+    # n_estimators          100                       100
     # --------------------------------------------------------
-    # f1-micro
+    # f1-micro              0.93                      0.9477
 
     # merged = encode(merged, 'dx1')
     # train, test = train_test_split(merged, test_size=0.2)
@@ -310,17 +310,17 @@ def main():
 
     # Try out different models and see their performance
 
-    # Bagging
-    bcv = bagging_cv(X_train, y_train, seed, verbose=0)
-    print_search_results("Bagging", bcv)
-
-    # RandomForest
-    rfcv = random_forest_cv(X_train, y_train, seed, verbose=0)
-    print_search_results("Random Forest", rfcv)
-
-    # ExtraTrees
-    etcv = random_forest_cv(X_train, y_train, seed, verbose=0)
-    print_search_results("Extra Trees", etcv)
+    # # Bagging
+    # bcv = bagging_cv(X_train, y_train, seed, verbose=0)
+    # print_search_results("Bagging", bcv)
+    #
+    # # RandomForest
+    # rfcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    # print_search_results("Random Forest", rfcv)
+    #
+    # # ExtraTrees
+    # etcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    # print_search_results("Extra Trees", etcv)
 
     # GradientBoosting
     gbcv = gradient_boosting_cv(X_train, y_train, seed, verbose=0)
