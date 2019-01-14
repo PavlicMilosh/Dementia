@@ -286,7 +286,7 @@ def xgboost_cv(X_train, y_train, seed, verbose=3):
 def main():
 
     seed = 14
-    random.seed()
+    random.seed(seed)
 
     merged = load_data()["merged"]
     merged.dropna(axis="rows", subset=["dx1"], inplace=True)
