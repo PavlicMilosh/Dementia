@@ -124,11 +124,11 @@ def bagging_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
-    # n_estimators          250
-    # warm_start            True
-    # max_samples           0.6
+    # n_estimators          250          150          150
+    # warm_start            True         True         True
+    # max_samples           0.6          0.6          0.6
     # --------------------------------------------------------
-    # f1-micro              0.9220
+    # f1-micro              0.9220       0.9268       0.9403
 
     clf = BaggingClassifier(n_estimators=140, random_state=seed)
 
@@ -154,12 +154,12 @@ def random_forest_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
-    # n_estimators          300
-    # criterion             gini
-    # min_samples_split     4
-    # max_depth             18
+    # n_estimators          300          850          350
+    # criterion             gini         gini         gini
+    # min_samples_split     4            2            14
+    # max_depth             18           12           10
     # --------------------------------------------------------
-    # f1-micro              0.9285
+    # f1-micro              0.9285       0.9293       0.9452
 
     clf = RandomForestClassifier(n_estimators=140, random_state=seed)
 
@@ -186,11 +186,12 @@ def extra_trees_cv(X_train, y_train, seed, verbose=3):
 
     # Results:
     #                       DEFAULT      Z-SCORE      OUTLIERS
-    # n_estimators
-    # min_samples_split
-    # max_depth
+    # n_estimators          1000         850          350
+    # min_samples_split     6            2            14
+    # max_depth             12           12           10
+    # criterion             gini         gini         gini
     # --------------------------------------------------------
-    # f1-micro
+    # f1-micro              0.9244       0.9293       0.9452
 
     clf = ExtraTreesClassifier(n_estimators=140, random_state=seed)
 
@@ -331,7 +332,161 @@ def main():
     print_search_results("XGBoost", xgbcv)
 
 
-if __name__ == '__main__':
+def main_def():
 
-    main()
+    print("DEFAULT\n\n")
+
+    seed = 14
+
+    merged = load_data()["merged"]
+    merged.dropna(axis="rows", subset=["dx1"], inplace=True)
+    merged.drop(labels=["ID", "Subject"], axis="columns", inplace=True)
+    merged = preprocess_merged_remove_rows(merged)
+
+    # Train test split
+    X, y = split_and_encode(merged, "dx1")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+
+    merged = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
+    X, y = split_and_encode(merged, "dx1")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    # Try out different models and see their performance
+
+    # ExtraTrees
+    etcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Extra Trees", etcv)
+
+
+def main_z():
+
+    print("ZSCORE\n\n")
+
+    seed = 14
+
+    merged = load_data()["merged"]
+    merged.dropna(axis="rows", subset=["dx1"], inplace=True)
+    merged.drop(labels=["ID", "Subject"], axis="columns", inplace=True)
+    merged = preprocess_merged_remove_rows(merged)
+
+    # Train test split
+    X, y = split_and_encode(merged, "dx1")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    # Perform z-score normalization
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+
+    merged = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
+    X, y = split_and_encode(merged, "dx1")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    # Try out different models and see their performance
+
+    # Bagging
+    bcv = bagging_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Bagging", bcv)
+
+    # RandomForest
+    rfcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Random Forest", rfcv)
+
+    # ExtraTrees
+    etcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Extra Trees", etcv)
+
+
+def main_o():
+
+    seed = 14
+
+    merged = load_data()["merged"]
+    merged.dropna(axis="rows", subset=["dx1"], inplace=True)
+    merged.drop(labels=["ID", "Subject"], axis="columns", inplace=True)
+    merged = preprocess_merged_remove_rows(merged)
+
+    # Train test split
+    X, y = split_and_encode(merged, "dx1")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    # Perform z-score normalization
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+
+    merged = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
+    X, y = split_and_encode(merged, "dx1")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    # Removing outliers using the Isolation Forest classifier
+    X_train, y_train = isolation_forest_outlier_removal(X_train, y_train, seed)
+
+    # Try out different models and see their performance
+
+    # Bagging
+    bcv = bagging_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Bagging", bcv)
+
+    # RandomForest
+    rfcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Random Forest", rfcv)
+
+    # ExtraTrees
+    etcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+    print_search_results("Extra Trees", etcv)
+
+
+# def main():
+#
+#     seed = 14
+#     random.seed(seed)
+#
+#     merged = load_data()["merged"]
+#     merged.dropna(axis="rows", subset=["dx1"], inplace=True)
+#     merged.drop(labels=["ID", "Subject"], axis="columns", inplace=True)
+#     merged = preprocess_merged_remove_rows(merged)
+#
+#     # Train test split
+#     X, y = split_and_encode(merged, "dx1")
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+#
+#     # Perform z-score normalization
+#     scaler = StandardScaler()
+#     X_train = scaler.fit_transform(X_train)
+#
+#     merged = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
+#     X, y = split_and_encode(merged, "dx1")
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+#
+#     # Removing outliers using the Isolation Forest classifier
+#     X_train, y_train = isolation_forest_outlier_removal(X_train, y_train, seed)
+#
+#     # Try out different models and see their performance
+#
+#     # Bagging
+#     bcv = bagging_cv(X_train, y_train, seed, verbose=0)
+#     print_search_results("Bagging", bcv)
+#
+#     # RandomForest
+#     rfcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+#     print_search_results("Random Forest", rfcv)
+#
+#     # ExtraTrees
+#     etcv = random_forest_cv(X_train, y_train, seed, verbose=0)
+#     print_search_results("Extra Trees", etcv)
+#
+#     # GradientBoosting
+#     gbcv = gradient_boosting_cv(X_train, y_train, seed, verbose=0)
+#     print_search_results("Gradient Boosting", gbcv)
+#
+#     # XGBoost
+#     xgbcv = xgboost_cv(X_train, y_train, seed, verbose=0)
+#     print_search_results("XGBoost", xgbcv)
+
+
+if __name__ == '__main__':
+    random.seed(14)
+    main_def()
+    main_z()
+    main_o()
 
