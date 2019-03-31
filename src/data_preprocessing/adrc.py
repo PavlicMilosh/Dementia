@@ -1,6 +1,6 @@
 from sklearn.model_selection import train_test_split
 
-from data_preprocessing.basic_preprocessing import load_data
+from src.data_preprocessing import load_data
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 

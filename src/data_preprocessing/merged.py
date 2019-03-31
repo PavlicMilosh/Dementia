@@ -4,13 +4,11 @@ from sklearn.ensemble import IsolationForest, RandomForestClassifier, ExtraTrees
 from sklearn.ensemble.bagging import BaggingClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 
-from data_preprocessing.basic_preprocessing import remove_others
-from data_preprocessing.basic_preprocessing import load_data
+from src.data_preprocessing import remove_others
+from src.data_preprocessing import load_data
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import randint as sp_randint
 import xgboost as xgb
 import random
 
