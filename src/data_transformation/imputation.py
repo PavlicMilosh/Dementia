@@ -1,26 +1,20 @@
-from sklearn.impute import SimpleImputer
-
-class Imputer:
-
-    def __init__(self):
-        pass
-
-    def fit(self, X, y):
-        self.model.fit(X, y)
-
-    def transform(self, X):
-        return self.model.transform(X)
+from fancyimpute import KNN, NuclearNormMinimization, SoftImpute, IterativeImputer, BiScaler
 
 
-class KNNImputation(Imputer):
+def get_imputer(imputer_name, **add_params):
 
-    def __init__(self):
-        pass
+    imputer_name = imputer_name.lower()
 
-
-class MeanImputation(Imputer):
-
-    def __init__(self):
-        self.model = SimpleImputer(strategy='mean')
-
+    if imputer_name == 'knn':
+        return KNN(**add_params)
+    elif imputer_name.lower() == 'nnm':
+        return NuclearNormMinimization(**add_params)
+    elif imputer_name == 'soft':
+        return SoftImpute(**add_params)
+    elif imputer_name == 'iterative':
+        return IterativeImputer(**add_params)
+    elif imputer_name == 'biscaler':
+        return BiScaler(**add_params)
+    else:
+        print('Choose one of predefined imputers')
 
