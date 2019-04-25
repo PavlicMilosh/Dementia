@@ -10,7 +10,7 @@ import numpy as np
 import xgboost as xgb
 import random
 
-from src.data_preprocessing.basic_preprocessing import remove_others, load_data
+from src.data_preprocessing.structured.basic_preprocessing import remove_others, load_data
 from src.data_transformation.dataset_separation import separate_datasets
 
 
