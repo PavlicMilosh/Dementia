@@ -1,0 +1,1 @@
+./download_oasis_scans.sh ./../list_of_selected_mri_scans.csv ./../scans/ ognjenfrancuski T1w,T2w
