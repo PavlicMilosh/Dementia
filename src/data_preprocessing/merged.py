@@ -4,13 +4,15 @@ from sklearn.ensemble import IsolationForest, RandomForestClassifier, ExtraTrees
 from sklearn.ensemble.bagging import BaggingClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 
-from src.data_preprocessing import remove_others
-from src.data_preprocessing import load_data
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 import numpy as np
 import xgboost as xgb
 import random
+
+from src.data_preprocessing.basic_preprocessing import remove_others, load_data
+from src.data_transformation.dataset_separation import separate_datasets
+
 
 def preprocess_merged_remove_rows(df):
     return df.dropna()
@@ -24,6 +26,11 @@ def preprocess_merged_mean_imputing(X):
 
 def preprocess_merged_models_imputing(X):
     pass
+
+
+def encode(dataset, y_label):
+    encoder = LabelEncoder()
+    dataset[y_label] = encoder.fit_transform(dataset[y_label])
 
 
 def split_and_encode(dataset, y_label):
@@ -46,7 +53,7 @@ def encode(dataset, y_col):
     return dataset
 
 
-def filter_by_feature_importance(threshold, dataset, X_train, y_train, seed):
+def filter_by_feature_importance(threshold, dataset, seed=14, X_train=None, y_train=None):
     # Feature importance
     forest = ExtraTreesClassifier(n_estimators=500, random_state=seed)
 
@@ -74,7 +81,7 @@ def filter_by_feature_importance(threshold, dataset, X_train, y_train, seed):
     features_to_keep = set(itertools.compress(list(dataset), [i > threshold for i in importances]))
     features_to_keep.add('dx1')
 
-    return remove_others(dataset, features_to_keep)
+    return remove_others(dataset, features_to_keep), features_to_keep
 
 
 def print_search_results(title, model):
@@ -281,6 +288,37 @@ def xgboost_cv(X_train, y_train, seed, verbose=3):
 
     return gCV.fit(X_train, y_train)
 
+def separated_datasets(seed):
+    merged = load_data()['merged']
+    merged.dropna(axis="rows", subset=["dx1"], inplace=True)
+    merged.drop(labels=["ID", "Subject"], axis="columns", inplace=True)
+
+    merged = encode(merged, 'dx1')
+
+    train, test = train_test_split(merged, test_size=.2)
+
+    x = train.columns
+    x.remove('dx1')
+
+    scaler = StandardScaler()
+    train[x] = scaler.fit_transform(train[x])
+
+    test[x] = scaler.transform(test[x])
+
+    merged, features = filter_by_feature_importance(threshold=0.005,
+                                                    dataset=merged,
+                                                    X_train=train.drop('dx1', axis=1),
+                                                    y_train=train['dx1'])
+
+    train = train[features]
+    test = test[features]
+
+    X_train, y_train = isolation_forest_outlier_removal(train.drop('dx1', axis=1), train['dx1'], seed)
+
+
+    healthy_df_train, diagnosed_df_train = separate_datasets(X_train, y_train)
+    healthy_df_test, diagnosed_df_train = separate_datasets(test.drop('dx1', axis=1), test['dx1'])
+
 
 def main():
 
@@ -300,7 +338,7 @@ def main():
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
 
-    merged = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
+    merged, _ = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
     X, y = split_and_encode(merged, "dx1")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
