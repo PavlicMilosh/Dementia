@@ -8,6 +8,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 from settings.settings import MODELS_DIR
 from src.data_preprocessing.structured.basic_preprocessing import load_data
+from src.data_preprocessing.structured.merged.merged import filter_by_feature_importance
 from src.data_preprocessing.structured.ml_classifier import MLClassifier
 from src.data_transformation.dataset_separation import separate_datasets
 from src.data_transformation.outlier_removal import remove_outliers
@@ -29,6 +30,13 @@ MERGED_MODELS_DIR = osp.join(MODELS_DIR, 'merged')
 
 
 def preprocess_and_separate_dataset(df: DataFrame):
+    features_to_keep = ['IRR', 'DYSILL', 'HACHIN', 'BILLS', 'SMOKYRS', 'EVENTS', 'PAYATTN', 'ANX', 'PARK', 'NPIQINF',
+                        'GDS', 'TRAVEL', 'CVDIMAG', 'NORMAL', 'PACKSPER', 'DEL', 'APA', 'DEP', 'HYPERCHO', 'REMDATES',
+                        'MEALPREP', 'STOVE', 'STROKCOG', 'NORMCOG', 'COGOTH', 'GAMES', 'MOT', 'TAXES', 'DISN',
+                        'QUITSMOK', 'MEDS', 'DEP2YRS', 'DEPOTHR', 'DEPD', 'NITE', 'CVDCOG', 'AGIT', 'HYPERTEN',
+                        'HXHYPER', 'SHOPPING', 'dx1']
+
+    df = df.loc[:, df.columns.isin(features_to_keep)]
 
     # fill na
     df.fillna(df.mean(), inplace=True)
@@ -48,6 +56,9 @@ def preprocess_and_separate_dataset(df: DataFrame):
     scaler = StandardScaler()
     train_features = scaler.fit_transform(train_features)
     test_features = scaler.transform(test_features)
+
+    # features_to_keep = filter_by_feature_importance(threshold=0.005, dataset=train_df,
+    #                                                 X_train=train_features, y_train=train_labels)
 
     train_features, train_labels = remove_outliers(model_name='isf', X=train_features, y=train_labels)
 

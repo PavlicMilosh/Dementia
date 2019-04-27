@@ -79,7 +79,10 @@ def filter_by_feature_importance(threshold, dataset, seed=14, X_train=None, y_tr
     features_to_keep = set(itertools.compress(list(dataset), [i > threshold for i in importances]))
     features_to_keep.add('dx1')
 
-    return remove_others(dataset, features_to_keep), features_to_keep
+    if dataset is None:
+        return features_to_keep
+    else:
+        return remove_others(dataset, features_to_keep), features_to_keep
 
 
 def isolation_forest_outlier_removal(X, y, seed,
