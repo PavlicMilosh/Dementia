@@ -1,7 +1,5 @@
-from sklearn.neural_network import MLPClassifier
-
 from src.models.base_models import RandomForest, NaiveBayes, LogisticRegresssion, SVM, XGBoost, Bagging, \
-    ExtraTrees, LDA
+    ExtraTrees, LDA, MLP
 
 
 def get_model(model_name):
@@ -22,7 +20,7 @@ def get_model(model_name):
     elif model_name == 'lda':
         return LDA()
     elif model_name == 'mlp':
-        return MLPClassifier(hidden_layer_sizes=(2048,))
+        return MLP()
     else:
         print('Choose one of predefined models')
 

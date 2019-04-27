@@ -24,11 +24,15 @@ RANDOM_STATE = 420
 
 # ROOTS DIRS ===========================================================================================================
 
-# Project root directory
 BASE_DIR = osp.dirname(osp.dirname(osp.abspath(__file__)))
 
-# Neuroimaging root directory
-NEUROIMAGING_DIR = osp.join(BASE_DIR, 'data', 'neuroimaging_data')
 
-# Structured data
+# DATA DIR =============================================================================================================
+
+NEUROIMAGING_DIR = osp.join(BASE_DIR, 'data', 'neuroimaging_data')
 STRUCTURED_DIR = osp.join(BASE_DIR, 'data', 'numerical_data')
+
+
+# MODEL ================================================================================================================
+
+MODELS_DIR = osp.join(BASE_DIR, 'model')

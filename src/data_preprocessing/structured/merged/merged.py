@@ -1,5 +1,6 @@
 import itertools
 
+import pandas as pd
 from sklearn.ensemble import IsolationForest, RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.ensemble.bagging import BaggingClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -10,6 +11,7 @@ import numpy as np
 import xgboost as xgb
 import random
 
+from settings.settings import RANDOM_STATE
 from src.data_preprocessing.structured.basic_preprocessing import remove_others, load_data
 from src.data_transformation.dataset_separation import separate_datasets
 
@@ -22,10 +24,6 @@ def preprocess_merged_mean_imputing(X):
     imputer = SimpleImputer()
     imputer.fit(X)
     imputer.transform(X)
-
-
-def preprocess_merged_models_imputing(X):
-    pass
 
 
 def encode(dataset, y_label):
@@ -82,21 +80,6 @@ def filter_by_feature_importance(threshold, dataset, seed=14, X_train=None, y_tr
     features_to_keep.add('dx1')
 
     return remove_others(dataset, features_to_keep), features_to_keep
-
-
-def print_search_results(title, model):
-    params_str = ""
-    for k, v in model.best_params_.items():
-        params_str += 18 * " " + "{:<20} : {}\n".format(k, v)
-    print("=" * 150)
-    print(title)
-    print("-"*150)
-    print("Best score:       {}\n".format(model.best_score_))
-    print("Best params:")
-    print(params_str)
-    print("Best estimator:\n")
-    print(model.best_estimator_)
-    print("=" * 150)
 
 
 def isolation_forest_outlier_removal(X, y, seed,
@@ -288,7 +271,8 @@ def xgboost_cv(X_train, y_train, seed, verbose=3):
 
     return gCV.fit(X_train, y_train)
 
-def separated_datasets(seed):
+
+def separated_datasets():
     merged = load_data()['merged']
     merged.dropna(axis="rows", subset=["dx1"], inplace=True)
     merged.drop(labels=["ID", "Subject"], axis="columns", inplace=True)
@@ -297,13 +281,15 @@ def separated_datasets(seed):
 
     train, test = train_test_split(merged, test_size=.2)
 
-    x = train.columns
-    x.remove('dx1')
+    x_cols = list(train.columns)
+    x_cols.remove('dx1')
 
     scaler = StandardScaler()
-    train[x] = scaler.fit_transform(train[x])
+    scaled_train_features = scaler.fit_transform(train[x_cols].values)
+    scaled_test_features = scaler.transform(test[x_cols].values)
 
-    test[x] = scaler.transform(test[x])
+    train[x_cols] = pd.DataFrame(scaled_train_features, index=train[x_cols].index, columns=train[x_cols].columns)
+    test[x_cols] = pd.DataFrame(scaled_test_features, index=test[x_cols].index, columns=test[x_cols].columns)
 
     merged, features = filter_by_feature_importance(threshold=0.005,
                                                     dataset=merged,
@@ -313,8 +299,7 @@ def separated_datasets(seed):
     train = train[features]
     test = test[features]
 
-    X_train, y_train = isolation_forest_outlier_removal(train.drop('dx1', axis=1), train['dx1'], seed)
-
+    X_train, y_train = isolation_forest_outlier_removal(train.drop('dx1', axis=1), train['dx1'], RANDOM_STATE)
 
     healthy_df_train, diagnosed_df_train = separate_datasets(X_train, y_train)
     healthy_df_test, diagnosed_df_train = separate_datasets(test.drop('dx1', axis=1), test['dx1'])
@@ -338,7 +323,7 @@ def main():
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
 
-    merged, _ = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
+    merged, features_to_keep = filter_by_feature_importance(0.005, merged, X_train, y_train, seed)
     X, y = split_and_encode(merged, "dx1")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
@@ -349,23 +334,18 @@ def main():
 
     # # Bagging
     # bcv = bagging_cv(X_train, y_train, seed, verbose=0)
-    # print_search_results("Bagging", bcv)
     #
     # # RandomForest
     # rfcv = random_forest_cv(X_train, y_train, seed, verbose=0)
-    # print_search_results("Random Forest", rfcv)
     #
     # # ExtraTrees
     # etcv = random_forest_cv(X_train, y_train, seed, verbose=0)
-    # print_search_results("Extra Trees", etcv)
 
     # GradientBoosting
     gbcv = gradient_boosting_cv(X_train, y_train, seed, verbose=0)
-    print_search_results("Gradient Boosting", gbcv)
 
     # XGBoost
     xgbcv = xgboost_cv(X_train, y_train, seed, verbose=0)
-    print_search_results("XGBoost", xgbcv)
 
 
 if __name__ == '__main__':

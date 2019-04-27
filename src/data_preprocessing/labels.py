@@ -1,3 +1,5 @@
+from enum import Enum
+
 LABEL_MAP = {
     "Cognitively Normal": ["Cognitively normal", "No dementia"],
     "Uncertain Dementia": ["uncertain dementia", "Unc: ques. Impairment", "uncertain- possible NON AD dem",
@@ -22,3 +24,25 @@ LABEL_MAP = {
                            "ProAph w/o dement", "Vascular Demt- secondary", "DLBD, primary",
                            "DAT w/depresss not contribut"]
 }
+
+
+class Label(Enum):
+
+    COGNITIVELY_NORMAL = '0', 'Cognitively Normal'
+    AD = '1', 'Alzheimer Dementia'
+    UNCERTAIN = '2', 'Uncertain Dementia'
+    NON_AD = '3', 'Non AD Dementia'
+    DIAGNOSED = '4', 'Diagnosed Dementia'  # used on HEALTHY vs ALL
+
+
+    def __new__(cls, value, name):
+        member = object.__new__(cls)
+        member._value_ = value
+        member.fullname = name
+        return member
+
+    def __str__(self):
+        return self.value
+
+    def __int__(self):
+        return int(self.value)

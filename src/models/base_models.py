@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 
+import numpy as np
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier
 from sklearn.externals import joblib
@@ -8,6 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
@@ -28,12 +30,51 @@ class BaseModel(object):
                                         refit=True,
                                         cv=CV_FOLDS,
                                         verbose=0)
+
         self.grid_search.fit(x_train, y_train)
+
         self.model = self.grid_search.best_estimator_
 
 
     def predict(self, inputs):
         return self.model.predict(inputs)
+
+
+    def evaluate(self, y, y_predicted, model_name):
+        f1 = f1_score(y, y_predicted, average='micro')
+        print('{} model achieved {} F-measure score.'.format(model_name, f1))
+        print('*' * 80)
+        return f1
+
+
+    def load_model(self, dir_path):
+        model_path = osp.join(dir_path, 'model')
+        lab2ind_path = osp.join(dir_path, 'lab2ind')
+        ind2lab_path = osp.join(dir_path, 'ind2lab')
+
+        if not osp.exists(model_path):
+            raise Exception("'model' file is not present inside given path: {}".format(dir_path))
+        if not osp.exists(lab2ind_path):
+            raise Exception("'lab2ind' file is not present inside given path: {}".format(dir_path))
+        if not osp.exists(ind2lab_path):
+            raise Exception("'ind2lab' file is not present inside given path: {}".format(dir_path))
+
+        try:
+            self.model = joblib.load(model_path)
+            self.ind2lab = joblib.load(ind2lab_path)
+            self.lab2ind = joblib.load(lab2ind_path)
+        except Exception as e:
+            print(e)
+            print("Couldn't load model from given dir {}!".format(dir_path))
+            exit(1)
+
+
+    def save_model(self, dir_path):
+        try:
+            os.makedirs(osp.dirname(dir_path), exist_ok=True)
+        except Exception as e:
+            print(e)
+            print("Couldn't save model on given dir {}!".format(dir_path))
 
 
     def print_search_results(self):
@@ -47,30 +88,6 @@ class BaseModel(object):
         print("Best estimator:\n")
         print(self.grid_search.best_estimator_)
         print("=" * 150)
-
-    def evaluate(self, y, y_predicted, model_name):
-        f1 = f1_score(y, y_predicted, average='micro')
-        print('{} model achieved {} F-measure score.'.format(model_name, f1))
-        print('*' * 80)
-        return f1
-
-
-    def load_model(self, path):
-        try:
-            self.model = joblib.load(path)
-        except Exception as e:
-            print(e)
-            print("Couldn't load model from path {}!".format(path))
-            exit(1)
-
-
-    def save_model(self, path):
-        try:
-            os.makedirs(osp.dirname(path), exist_ok=True)
-            joblib.dump(self.model, path)
-        except Exception as e:
-            print(e)
-            print("Couldn't save model on path {}!".format(path))
 
 
 class Bagging(BaseModel):
@@ -155,3 +172,9 @@ class LDA(BaseModel):
                        'learning_decay': [.5, .6, .7, .8, .9, 1]
                        }
         self.model = LatentDirichletAllocation(n_components=5, n_jobs=-1, random_state=RANDOM_STATE)
+
+
+class MLP(BaseModel):
+    def __init__(self, hidden_size=(2048,)):
+        super(MLP, self).__init__()
+        self.model = MLPClassifier(hidden_layer_sizes=hidden_size)

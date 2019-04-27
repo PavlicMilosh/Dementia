@@ -42,6 +42,7 @@ def create_download_list(path, save_path):
 
     with open(save_path, 'w'):
         for selected in selected_df['MR ID']:
+            pass
 
     # selected_df.to_csv(save_path, index=False)
 
