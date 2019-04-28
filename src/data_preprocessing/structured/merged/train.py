@@ -11,6 +11,7 @@ from src.data_preprocessing.structured.basic_preprocessing import load_data
 from src.data_preprocessing.structured.merged.merged import filter_by_feature_importance
 from src.data_preprocessing.structured.ml_classifier import MLClassifier
 from src.data_transformation.dataset_separation import separate_datasets
+from src.data_transformation.imputation import get_imputer
 from src.data_transformation.outlier_removal import remove_outliers
 
 
@@ -38,8 +39,6 @@ def preprocess_and_separate_dataset(df: DataFrame):
 
     df = df.loc[:, df.columns.isin(features_to_keep)]
 
-    # fill na
-    df.fillna(df.mean(), inplace=True)
 
     # split into train and test datasets
     train_df, test_df = train_test_split(df, test_size=.2)
@@ -51,6 +50,12 @@ def preprocess_and_separate_dataset(df: DataFrame):
     train_labels = np.ravel(train_df['dx1'])
     test_features = test_df[feature_cols].values
     test_labels = np.ravel(test_df['dx1'])
+
+    # fill na
+    # df.fillna(df.mean(), inplace=True)
+    imputer = get_imputer('KNN')
+    train_features = imputer.fit_transform(train_features)
+    test_features = imputer.fit_transform(test_features)
 
     # perform normalization on feature values for train and test
     scaler = StandardScaler()
