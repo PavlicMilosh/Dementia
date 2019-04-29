@@ -27,6 +27,7 @@ class MLClassifier:
         self.ind2lab = {idx: yi for yi, idx in self.lab2ind.items()}
         y = np.array(list(map(lambda yi: self.lab2ind[yi], y)))
 
+
         self.pipeline = Pipeline([
             ('scaler', StandardScaler()),
             ('model', get_model(self.model_name))
@@ -35,7 +36,11 @@ class MLClassifier:
         # print report
         self.pipeline.fit(X, y, **fit_params)
         predicted = self.pipeline.predict(X)
-        print(str(classification_report(y, predicted)))
+
+        # can do this because the order of items is consistent in one instance of dictionary
+        indexes = list(self.ind2lab.keys())
+        labels = list(self.ind2lab.values())
+        print(str(classification_report(y, predicted, labels=indexes, target_names=labels)))
 
 
     def predict(self, X):
@@ -45,9 +50,14 @@ class MLClassifier:
     def evaluate(self, X, y):
         predicted = self.pipeline.predict(X)
         y = np.array(list(map(lambda yi: self.lab2ind[yi], y)))
-        report = classification_report(y, predicted)
+        indexes = list(self.ind2lab.keys())
+        labels = list(self.ind2lab.values())
+        report = classification_report(y, predicted, labels=indexes, target_names=labels)
         print(str(report))
 
+
+    def print_model(self):
+        self.pipeline.named_steps['model'].print_search_results()
 
     def load(self):
         pipeline_path = osp.join(self.model_dir, 'final')

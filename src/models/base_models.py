@@ -94,9 +94,9 @@ class Bagging(BaseModel):
 
     def __init__(self):
         super(Bagging).__init__()
-        self.params = {'n_estimators': list(range(100, 1500, 50)),
-                       'warm_start': [True, False],
-                       'max_samples': [0.6, 0.8, 1.0]
+        self.params = {'n_estimators': list(range(100, 251, 50)),
+                       'warm_start': [True],
+                       'max_samples': [0.4, 0.6, 0.8]
                       }
         self.model = BaggingClassifier(n_estimators=140, random_state=RANDOM_STATE)
 
@@ -104,10 +104,10 @@ class Bagging(BaseModel):
 class RandomForest(BaseModel):
     def __init__(self):
         super(RandomForest, self).__init__()
-        self.params = {'n_estimators': list(range(100, 1000, 200)),
-                       'criterion': ['gini', 'entropy'],
-                       'min_samples_split': list(range(2, 20, 2)),
-                       'max_depth': list(range(2, 20, 2))
+        self.params = {'n_estimators': [200, 250, 350, 400], # list(range(200, 400, 100)),
+                       'criterion': ['gini'],  # ['gini', 'entropy'],
+                       'min_samples_split': list(range(5, 16, 5)),
+                       'max_depth': list(range(10, 21, 5))
                        }
 
         self.model = RandomForestClassifier(n_estimators=100, n_jobs=-1, max_depth=3, random_state=RANDOM_STATE)
@@ -116,9 +116,9 @@ class RandomForest(BaseModel):
 class ExtraTrees(BaseModel):
     def __init__(self):
         super(ExtraTrees, self).__init__()
-        self.params = { 'n_estimators': list(range(100, 1500, 50)),
-                        'criterion': ['gini', 'entropy'],
-                        'min_samples_split': list(range(2, 20, 2)),
+        self.params = { 'n_estimators': [200, 250, 350, 400], # list(range(100, 1500, 50)),
+                        'criterion': ['gini'], # , 'entropy'],
+                        'min_samples_split': list(range(5, 16, 5)),
                         'max_depth': list(range(2, 20, 2))
                       }
         self.model = ExtraTreesClassifier(n_estimators=140, random_state=RANDOM_STATE)
@@ -159,10 +159,10 @@ class XGBoost(BaseModel):
                        'learning_rate': [0.1],
                        'max_depth': list(range(4, 13, 4)),
                        'min_child_weight': list(range(2, 7, 2)),
-                       'subsample': [0.8, 1],
-                       'n_estimators': list(range(100, 1000, 200))
+                       'subsample': [0.8],
+                       'n_estimators': list(range(50, 201, 50))
                        }
-        self.model = XGBClassifier(objective='multi:softmax', num_class=5, n_jobs=-1, random_state=RANDOM_STATE)
+        self.model = XGBClassifier(objective='multi:softmax', num_class=3, n_jobs=-1, random_state=RANDOM_STATE)
 
 
 class LDA(BaseModel):

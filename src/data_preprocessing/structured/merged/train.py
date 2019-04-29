@@ -13,17 +13,17 @@ from src.data_preprocessing.structured.ml_classifier import MLClassifier
 from src.data_transformation.dataset_separation import separate_datasets
 from src.data_transformation.imputation import get_imputer
 from src.data_transformation.outlier_removal import remove_outliers
-
+from src.data_transformation.sampling import get_oversampler
 
 MODELS = [
-    'bagging',
-    'extraTrees',
-    'randomForest',
-    'naiveBayes',
-    'logisticRegression',
-    'svm',
-    'xgboost',
-    'lda',
+    # 'bagging',
+    # 'extraTrees',
+    # 'randomForest',
+    # 'naiveBayes',
+    # 'logisticRegression',
+    # 'svm',
+    # 'xgboost',
+    # 'lda',
     'mlp'
 ]
 
@@ -31,14 +31,16 @@ MERGED_MODELS_DIR = osp.join(MODELS_DIR, 'merged')
 
 
 def preprocess_and_separate_dataset(df: DataFrame):
+
+    # find features to keep based on their importance
+    # features_to_keep = filter_by_feature_importance(threshold=0.005, dataset=train_df,
+    # X_train=train_features, y_train=train_labels)
     features_to_keep = ['IRR', 'DYSILL', 'HACHIN', 'BILLS', 'SMOKYRS', 'EVENTS', 'PAYATTN', 'ANX', 'PARK', 'NPIQINF',
                         'GDS', 'TRAVEL', 'CVDIMAG', 'NORMAL', 'PACKSPER', 'DEL', 'APA', 'DEP', 'HYPERCHO', 'REMDATES',
                         'MEALPREP', 'STOVE', 'STROKCOG', 'NORMCOG', 'COGOTH', 'GAMES', 'MOT', 'TAXES', 'DISN',
                         'QUITSMOK', 'MEDS', 'DEP2YRS', 'DEPOTHR', 'DEPD', 'NITE', 'CVDCOG', 'AGIT', 'HYPERTEN',
                         'HXHYPER', 'SHOPPING', 'dx1']
-
     df = df.loc[:, df.columns.isin(features_to_keep)]
-
 
     # split into train and test datasets
     train_df, test_df = train_test_split(df, test_size=.2)
@@ -51,8 +53,7 @@ def preprocess_and_separate_dataset(df: DataFrame):
     test_features = test_df[feature_cols].values
     test_labels = np.ravel(test_df['dx1'])
 
-    # fill na
-    # df.fillna(df.mean(), inplace=True)
+    # fill missing values using KNN
     imputer = get_imputer('KNN')
     train_features = imputer.fit_transform(train_features)
     test_features = imputer.fit_transform(test_features)
@@ -62,20 +63,27 @@ def preprocess_and_separate_dataset(df: DataFrame):
     train_features = scaler.fit_transform(train_features)
     test_features = scaler.transform(test_features)
 
-    # features_to_keep = filter_by_feature_importance(threshold=0.005, dataset=train_df,
-    #                                                 X_train=train_features, y_train=train_labels)
+    # oversample train dataset
+    sampler = get_oversampler('adasyn')
+    train_features, train_labels = sampler.fit_resample(train_features, train_labels)
 
+    # remove outliers
     train_features, train_labels = remove_outliers(model_name='isf', X=train_features, y=train_labels)
 
-    # after removing outliers return data to original values
+    # after removing outliers return train and test data to original values
     train_features = scaler.inverse_transform(train_features)
     train_df = pd.DataFrame(train_features, columns=feature_cols)
     train_df['dx1'] = pd.Series(train_labels)
+
+    test_features = scaler.inverse_transform(test_features)
+    test_df = pd.DataFrame(test_features, columns=feature_cols)
+    test_df['dx1'] = pd.Series(test_labels)
 
     # split data into healthy and diagnosed parts
     healthy_df_train, diagnosed_df_train = separate_datasets(train_df, 'dx1')
     healthy_df_test, diagnosed_df_test = separate_datasets(test_df, 'dx1')
 
+    # reset indexes
     healthy_df_train.reset_index(inplace=True)
     healthy_df_test.reset_index(inplace=True)
     diagnosed_df_train.reset_index(inplace=True)
@@ -96,11 +104,19 @@ def train(model_name, X, y, X_test, y_test):
                          model_dir=MERGED_MODELS_DIR,
                          load=False)
     model.train(X, y)
-    # model.load()
+    print('='*10 + '\n\n\n')
+    print("{} finished training".format(model_name))
+
+    print("\nMODEL\n")
+    model.print_model()
+
+    print("\nTRAIN RESULTS\n")
     model.evaluate(X, y)
-    print("test")
+
+    print("\nTEST RESULTS\n")
     model.evaluate(X_test, y_test)
-    print("-" * 50)
+
+    print('='*10 + '\n\n\n')
 
 
 if __name__ == '__main__':
