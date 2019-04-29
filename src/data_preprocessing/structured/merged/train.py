@@ -16,14 +16,14 @@ from src.data_transformation.outlier_removal import remove_outliers
 
 
 MODELS = [
-    # 'bagging',
-    # 'extraTrees',
-    # 'randomForest',
-    # 'naiveBayes',
-    # 'logisticRegression',
-    # 'svm',
-    # 'xgboost',
-    # 'lda',
+    'bagging',
+    'extraTrees',
+    'randomForest',
+    'naiveBayes',
+    'logisticRegression',
+    'svm',
+    'xgboost',
+    'lda',
     'mlp'
 ]
 
@@ -91,13 +91,16 @@ def load_merged_data():
     return merged
 
 
-def train(model_name, X, y):
+def train(model_name, X, y, X_test, y_test):
     model = MLClassifier(model_name=model_name,
                          model_dir=MERGED_MODELS_DIR,
                          load=False)
-    # model.train(X, y)
-    model.load()
+    model.train(X, y)
+    # model.load()
     model.evaluate(X, y)
+    print("test")
+    model.evaluate(X_test, y_test)
+    print("-" * 50)
 
 
 if __name__ == '__main__':
@@ -107,6 +110,8 @@ if __name__ == '__main__':
 
     X = np.array(healthy_df_train.drop('dx1', axis='columns'))
     y = np.ravel(healthy_df_train['dx1'])
+    X_test = np.array(healthy_df_test.drop('dx1', axis='columns'))
+    y_test = np.ravel(healthy_df_test['dx1'])
 
     for model_name in MODELS:
-        train(model_name, X, y)
+        train(model_name, X, y, X_test, y_test)
