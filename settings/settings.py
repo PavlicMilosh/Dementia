@@ -29,6 +29,7 @@ BASE_DIR = osp.dirname(osp.dirname(osp.abspath(__file__)))
 
 # DATA DIR =============================================================================================================
 
+DATA_VISUALISATION_DIR = osp.join(BASE_DIR, 'data', 'visual')
 NEUROIMAGING_DIR = osp.join(BASE_DIR, 'data', 'neuroimaging_data')
 STRUCTURED_DIR = osp.join(BASE_DIR, 'data', 'numerical_data')
 

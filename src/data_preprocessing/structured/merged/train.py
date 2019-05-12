@@ -1,20 +1,18 @@
+import os
 import os.path as osp
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from pandas import DataFrame
-from sklearn.decomposition import PCA, KernelPCA
+from sklearn.decomposition import KernelPCA
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 
-from settings.settings import MODELS_DIR
+from settings.settings import MODELS_DIR, DATA_VISUALISATION_DIR
 from src.data_preprocessing.structured.basic_preprocessing import load_data
-from src.data_preprocessing.structured.merged.merged import filter_by_feature_importance
 from src.data_preprocessing.structured.ml_classifier import MLClassifier
 from src.data_transformation.dataset_separation import separate_datasets
 from src.data_transformation.imputation import get_imputer
-from src.data_transformation.outlier_removal import remove_outliers
 from src.data_transformation.sampling import get_oversampler
 
 MODELS = [
@@ -32,19 +30,39 @@ MODELS = [
 MERGED_MODELS_DIR = osp.join(MODELS_DIR, 'merged')
 
 
-def visualize_data(x, y):
-    kpca = KernelPCA(n_components=2, kernel='rbf', fit_inverse_transform=True, gamma=10)
+def visualize_data(x, y, dims=2, name='data.csv'):
+    kpca = KernelPCA(n_components=dims, kernel='rbf', fit_inverse_transform=True, gamma=10)
     X_kpca = kpca.fit_transform(x)
-    d = {'Alzheimer Dementia': 0, 'Non AD Dementia': 1, 'Uncertain Dementia': 2,
-         'Cognitively Normal': 3}
-    y = np.vectorize(d.get)(y)
 
-    #add jitter in rapidminer
-    plt.scatter(X_kpca[:, 0], X_kpca[:, 1], c=y)
-    plt.title('pca')
-    plt.colorbar()
-    plt.show()
+    df = DataFrame()
+    df['x_pca_0'] = pd.Series(X_kpca[:, 0])
+    df['x_pca_1'] = pd.Series(X_kpca[:, 1])
+    if dims == 3:
+        df['x_pca_2'] = pd.Series(X_kpca[:, 2])
+    df['y'] = pd.Series(y)
 
+    if not os.path.exists(DATA_VISUALISATION_DIR):
+        os.makedirs(DATA_VISUALISATION_DIR)
+    df.to_csv(osp.join(DATA_VISUALISATION_DIR, name))
+
+    d = {
+        'Alzheimer Dementia': 0,
+        'Non AD Dementia': 1,
+        'Uncertain Dementia': 2,
+        'Cognitively Normal': 3
+    }
+
+    # # add jitter in rapidminer
+    #
+    # if dimensions == 2:
+    #     plt.scatter(X_kpca[:, 0], X_kpca[:, 1], c=y)
+    # else:
+    #     plt.scatter(X_kpca[:, 0], X_kpca[:, 1], X_kpca[:, 2], c=y)
+    #
+    # plt.title('pca')
+    # plt.colorbar()
+    # plt.show()
+    print()
 
 
 def preprocess(df: DataFrame, separate=False):
@@ -79,13 +97,15 @@ def preprocess(df: DataFrame, separate=False):
     train_features = scaler.fit_transform(train_features)
     test_features = scaler.transform(test_features)
 
-    visualize_data(train_features, train_labels)
+    # visualize_data(train_features, train_labels, dims=2, name='original-2d.csv')
+    # visualize_data(train_features, train_labels, dims=3, name='original-3d.csv')
 
     # oversample train dataset
     sampler = get_oversampler('adasyn')
     train_features, train_labels = sampler.fit_resample(train_features, train_labels)
 
-    visualize_data(train_features, train_labels)
+    # visualize_data(train_features, train_labels, dims=2, name='oversampled-2d.csv')
+    # visualize_data(train_features, train_labels, dims=3, name='oversampled-3d.csv')
 
     # remove outliers
     # train_features, train_labels = remove_outliers(model_name='isf', X=train_features, y=train_labels)
@@ -99,6 +119,8 @@ def preprocess(df: DataFrame, separate=False):
     test_df = pd.DataFrame(test_features, columns=feature_cols)
     test_df['dx1'] = pd.Series(test_labels)
 
+    # features_to_keep = filter_by_feature_importance(threshold=0.005, dataset=train_df)
+
     if separate:
         # split data into healthy and diagnosed parts
         healthy_df_train, diagnosed_df_train = separate_datasets(train_df, 'dx1')
@@ -109,12 +131,6 @@ def preprocess(df: DataFrame, separate=False):
         healthy_df_test.reset_index(inplace=True)
         diagnosed_df_train.reset_index(inplace=True)
         diagnosed_df_test.reset_index(inplace=True)
-
-        X = np.array(train_df.drop('dx1', axis='columns'))
-        y = np.ravel(train_df['dx1'])
-
-        features_to_keep = filter_by_feature_importance(threshold=0.005, dataset=healthy_df_train,
-                                                        X_train=X, y_train=y)
 
         return healthy_df_train, healthy_df_test, diagnosed_df_train, diagnosed_df_test
 

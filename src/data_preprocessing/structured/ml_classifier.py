@@ -1,11 +1,12 @@
 import os
+import os.path as osp
 
 import numpy as np
 from sklearn.externals import joblib
-from sklearn.metrics import classification_report, accuracy_score, f1_score
+from sklearn.metrics import classification_report
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-import os.path as osp
+
 from src.models.models import get_model
 
 
@@ -40,7 +41,7 @@ class MLClassifier:
         # can do this because the order of items is consistent in one instance of dictionary
         indexes = list(self.ind2lab.keys())
         labels = list(self.ind2lab.values())
-        # print(str(classification_report(y, predicted, labels=indexes, target_names=labels)))
+        print(str(classification_report(y, predicted, labels=indexes, target_names=labels)))
 
 
     def predict(self, X):
