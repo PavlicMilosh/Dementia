@@ -1,6 +1,7 @@
 import itertools
 
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.ensemble import IsolationForest, RandomForestClassifier, ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.ensemble.bagging import BaggingClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -59,6 +60,24 @@ def filter_by_feature_importance(threshold, dataset, seed=14, X_train=None, y_tr
     importances = forest.feature_importances_
     std = np.std([tree.feature_importances_ for tree in forest.estimators_],
                  axis=0)
+
+    std = np.std([tree.feature_importances_ for tree in forest.estimators_], axis=0)
+    indices = np.argsort(importances)[::-1]
+
+    # Print the feature ranking
+    feature_importances = pd.DataFrame(forest.feature_importances_,
+                                       index=dataset.drop(['index', 'dx1'], axis='columns').columns,
+                                       columns=['importance']).sort_values('importance', ascending=False)
+
+    # Plot the feature importances of the forest
+    plt.figure()
+    plt.title("Feature importances")
+    plt.bar(range(X_train.shape[1]), importances[indices],
+            color="r", yerr=std[indices], align="center")
+    plt.xticks(range(X_train.shape[1]), indices)
+    plt.xlim([-1, X_train.shape[1]])
+    plt.show()
+
     indices = np.argsort(importances)[::-1]
 
     # Print the feature ranking

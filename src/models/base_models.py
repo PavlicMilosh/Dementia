@@ -1,7 +1,6 @@
 import os
 import os.path as osp
 
-import numpy as np
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier, ExtraTreesClassifier
 from sklearn.externals import joblib
@@ -104,10 +103,10 @@ class Bagging(BaseModel):
 class RandomForest(BaseModel):
     def __init__(self):
         super(RandomForest, self).__init__()
-        self.params = {'n_estimators': [200, 250, 350, 400], # list(range(200, 400, 100)),
-                       'criterion': ['gini'],  # ['gini', 'entropy'],
+        self.params = {'n_estimators': [50, 100, 200, 250, 350],
+                       'criterion': ['gini'],
                        'min_samples_split': list(range(5, 16, 5)),
-                       'max_depth': list(range(10, 21, 5))
+                       'max_depth': list(range(2, 7, 2))
                        }
 
         self.model = RandomForestClassifier(n_estimators=100, n_jobs=-1, max_depth=3, random_state=RANDOM_STATE)
@@ -119,7 +118,7 @@ class ExtraTrees(BaseModel):
         self.params = { 'n_estimators': [200, 250, 350, 400], # list(range(100, 1500, 50)),
                         'criterion': ['gini'], # , 'entropy'],
                         'min_samples_split': list(range(5, 16, 5)),
-                        'max_depth': list(range(2, 20, 2))
+                        'max_depth': list(range(2, 7, 2))
                       }
         self.model = ExtraTreesClassifier(n_estimators=140, random_state=RANDOM_STATE)
 
@@ -137,7 +136,7 @@ class LogisticRegresssion(BaseModel):
         self.params = {'penalty': ['l2'],
                        'C': [.1, .2, .5, 1],
                        'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'],
-                       'max_iter': list(range(100, 1001, 100))
+                       'max_iter': list(range(100, 601, 100))
                        }
         self.model = LogisticRegression(solver='warn', multi_class='auto', random_state=RANDOM_STATE)
 
@@ -145,7 +144,7 @@ class LogisticRegresssion(BaseModel):
 class SVM(BaseModel):
     def __init__(self):
         super(SVM, self).__init__()
-        self.params = {'C': [.01, .05, .1, .2, .5, 1, 2],
+        self.params = {'C': [.01, .05, .1, .2, .5, 1, 2, 5],
                        'kernel': ['linear', 'rbf'],
                        'decision_function_shape': ['ovo', 'ovr']
                        }
@@ -157,7 +156,7 @@ class XGBoost(BaseModel):
         super(XGBoost, self).__init__()
         self.params = {'nthread': [1],
                        'learning_rate': [0.1],
-                       'max_depth': list(range(4, 13, 4)),
+                       'max_depth': list(range(2, 9, 2)),
                        'min_child_weight': list(range(2, 7, 2)),
                        'subsample': [0.8],
                        'n_estimators': list(range(50, 201, 50))

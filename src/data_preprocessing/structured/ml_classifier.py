@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 from sklearn.externals import joblib
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, accuracy_score, f1_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 import os.path as osp
@@ -40,7 +40,7 @@ class MLClassifier:
         # can do this because the order of items is consistent in one instance of dictionary
         indexes = list(self.ind2lab.keys())
         labels = list(self.ind2lab.values())
-        print(str(classification_report(y, predicted, labels=indexes, target_names=labels)))
+        # print(str(classification_report(y, predicted, labels=indexes, target_names=labels)))
 
 
     def predict(self, X):
@@ -52,6 +52,9 @@ class MLClassifier:
         y = np.array(list(map(lambda yi: self.lab2ind[yi], y)))
         indexes = list(self.ind2lab.keys())
         labels = list(self.ind2lab.values())
+        # print("acuracy: " + str(accuracy_score(y, predicted)))
+        # print("micro-f1: " + str(f1_score(y, predicted, average='micro')))
+
         report = classification_report(y, predicted, labels=indexes, target_names=labels)
         print(str(report))
 
